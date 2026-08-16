@@ -9,7 +9,7 @@ export interface User{
 export interface LocationData{
     latitude: number;
     longitude: number;
-    formattedAddress: string;
+    formatedAddress: string;
 }
 
 export interface AppContextType{
@@ -19,4 +19,7 @@ export interface AppContextType{
     setUser: React.Dispatch<React.SetStateAction<User | null>>;
     setIsAuth: React.Dispatch<React.SetStateAction<boolean>>;
     setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+    location: LocationData | null;
+    loadingLocation: boolean;
+    city:string;
 }

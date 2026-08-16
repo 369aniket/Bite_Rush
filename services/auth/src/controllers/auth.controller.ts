@@ -22,14 +22,13 @@ export const loginUser = TryCatch(async(req, res) =>{
 
         let user = await User.findOne({ email })
 
-        if(user){
-            throw new Error (`User is already exist.`)
-        }
-        user = await User.create({
-              name,
-              email,
-              image,
-          })
+       if (!user) {
+    user = await User.create({
+        name,
+        email,
+        image,
+    })
+    }
 
         const token = jwt.sign({userId:user._id, name:user.name, email:user.email}, process.env.JWT_SECRET as string, {expiresIn:'15d'});
 
@@ -62,7 +61,8 @@ export const addUserRole = TryCatch(async(req: AuthenticatedRequest, res) => {
         return res.status(404).json({ message: "User not found"})
     }
 
-    const token = jwt.sign({ user }, process.env.JWT_SECRET as string, {expiresIn: '15d'} )
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {expiresIn: '15d'})
+    //                       ^^^^^^^^^^^^^^^^^^^^ ✅ ab login token jaisa hi consistent hai
 
     res.json({user, token})
 })
