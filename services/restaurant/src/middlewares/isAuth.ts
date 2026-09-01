@@ -3,10 +3,11 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 export interface IUser {
     _id: string;
-    name:string;
-    email:string;
+    name: string;
+    email: string;
     image: string;
     role: string;
+    restaurantId: string;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -26,24 +27,40 @@ export const isAuth = async (
                 success: false,
                 message: "Please login - No auth header"
             });
-            return; 
+            return;
         }
 
         const token = authHeader.split(' ')[1];
-        
-    
+
+
         if (!token) {
             res.status(401).json({
                 success: false,
                 message: "Please login - Token missing"
             });
-            return; 
+            return;
         }
 
 
         let decodedToken: JwtPayload;
         try {
             decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
+
+            if (!decodedToken) {
+                res.status(401).json({ message: "Token is missin or Invalid" })
+                return
+            }
+
+                req.user = {
+                _id: decodedToken.userId || '',
+                name: decodedToken.name || '',
+                email: decodedToken.email || '',
+                role: decodedToken.role || 'customer',
+                restaurantId: decodedToken.restaurantId || '',
+                image: decodedToken.image || ''
+            };
+
+            next();
         } catch (jwtError) {
 
             if (jwtError instanceof jwt.TokenExpiredError) {
@@ -53,6 +70,7 @@ export const isAuth = async (
                 });
                 return;
             }
+
             res.status(401).json({
                 success: false,
                 message: "Invalid token - Please login again"
@@ -60,39 +78,12 @@ export const isAuth = async (
             return;
         }
 
-        console.log("🔍 Decoded Token:", JSON.stringify(decodedToken, null, 2));
-        console.log("🔍 UserId:", decodedToken.userId);
-        console.log("🔍 Email:", decodedToken.email);
-
-
-        if (!decodedToken.userId) {
-            res.status(401).json({
-                success: false,
-                message: "Invalid token - User ID missing"
-            });
-            return; 
-        }
-
-   
-        const user = await User.findById(decodedToken.userId)
-            .select('-token -tokenCreatedAt -password');
-        
-        if (!user) {
-            res.status(401).json({
-                success: false,
-                message: "User not found"
-            });
-            return; 
-        }
-
-        req.user = user;
-        next(); 
 
     } catch (error) {
 
-        console.error("❌ Auth middleware error:", error);
-        
-    
+        console.error(" Auth middleware error:", error);
+
+
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
@@ -103,3 +94,28 @@ export const isAuth = async (
         return;
     }
 };
+
+
+export const isSeller = async (
+    req: AuthenticatedRequest,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    const user = req.user;
+
+    if (!user) {
+        res
+            .status(401)
+            .json({ message: "Please login first" })
+        return
+    }
+
+    if (user.role !== "seller") {
+        res
+            .status(403)
+            .json({ message: "You are not authorized as a seller" });
+        return
+    }
+
+    next();
+}

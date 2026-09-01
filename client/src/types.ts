@@ -23,3 +23,34 @@ export interface AppContextType{
     loadingLocation: boolean;
     city:string;
 }
+
+
+export interface IRestaurant{
+    _id: string;
+    name: string;
+    description?: string;
+    image: string;
+    ownerId: string;
+    phone: number;
+    isVerified: boolean;
+
+    autoLocation: {
+        type: "Point",
+        coordinates:[number, number] // longitude latitude
+        formatedAddress: string;
+    };
+    isOpen: boolean;
+    createdAt: Date;
+}
+
+export interface IMenu {
+    _id: string;
+    restaurantId:string;
+    name: string;
+    description: string;
+    image?: string;
+    price: number;
+    isAvailable: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}

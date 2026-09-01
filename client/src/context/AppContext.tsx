@@ -8,6 +8,7 @@ import {
 import { authService } from "../main";
 import type { AppContextType, LocationData, User } from "../types";
 import axios from "axios";
+import { Toaster } from "react-hot-toast";
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -74,6 +75,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
             data.address.village ||
             "Your current location",
         );
+        setLoadingLocation(false)
       } catch (error) {
         setLocation({
             latitude,
@@ -82,6 +84,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
         })
 
         setCity("Faild to load")
+        setLoadingLocation(false)
       }
     });
   },[]);
@@ -91,6 +94,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
       value={{ isAuth, loading, setIsAuth, setLoading, setUser, user, location, loadingLocation, city }}
     >
       {children}
+       <Toaster/>
     </AppContext.Provider>
   );
 };

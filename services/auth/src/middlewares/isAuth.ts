@@ -53,12 +53,6 @@ export const isAuth = async (
             });
             return;
         }
-
-        console.log("🔍 Decoded Token:", JSON.stringify(decodedToken, null, 2));
-        console.log("🔍 UserId:", decodedToken.userId);
-        console.log("🔍 Email:", decodedToken.email);
-
-
         if (!decodedToken.userId) {
             res.status(401).json({
                 success: false,
@@ -84,9 +78,8 @@ export const isAuth = async (
 
     } catch (error) {
 
-        console.error("❌ Auth middleware error:", error);
-        
-    
+        console.error("Auth middleware error:", error);
+
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,

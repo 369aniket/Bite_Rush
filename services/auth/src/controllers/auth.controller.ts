@@ -22,8 +22,8 @@ export const loginUser = TryCatch(async(req, res) =>{
 
         let user = await User.findOne({ email })
 
-       if (!user) {
-    user = await User.create({
+    if (!user) {
+        user = await User.create({
         name,
         email,
         image,
@@ -37,7 +37,6 @@ export const loginUser = TryCatch(async(req, res) =>{
             message:'Login Successfull',
             token,
             user,
-
         })
 })
 
@@ -61,8 +60,7 @@ export const addUserRole = TryCatch(async(req: AuthenticatedRequest, res) => {
         return res.status(404).json({ message: "User not found"})
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET as string, {expiresIn: '15d'})
-    //                       ^^^^^^^^^^^^^^^^^^^^ ✅ ab login token jaisa hi consistent hai
+    const token = jwt.sign({userId:user._id, name:user.name, email:user.email, role: user.role}, process.env.JWT_SECRET as string, {expiresIn: '15d'})
 
     res.json({user, token})
 })
