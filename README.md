@@ -211,10 +211,10 @@ The following features are planned for BiteRush:
 * [x] Current location detection
 * [x] Restaurant service initialization
 * [x] Restaurant Mongoose schema
-* [ ] Restaurant CRUD APIs
-* [ ] Restaurant dashboard
-* [ ] Food/menu management
-* [ ] Cart functionality
+* [X] Restaurant CRUD APIs
+* [X] Restaurant dashboard
+* [X] Food/menu management
+* [X] Cart functionality
 * [ ] Order service
 * [ ] Order management
 * [ ] Payment integration
