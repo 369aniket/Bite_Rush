@@ -17,7 +17,7 @@ const RestaurantProfile = ({ restaurant, isSeller, onUpdate }: props) => {
     const [editMode, setEditMode] = useState(false);
     const [name, setName] = useState(restaurant.name)
     const [description, setDescription] = useState(restaurant.description)
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(restaurant.isOpen)
     const [loading, setLoading] = useState(false)
 
 
@@ -88,6 +88,12 @@ const RestaurantProfile = ({ restaurant, isSeller, onUpdate }: props) => {
                             <BiEdit size={18} />
                         </button>
                     </div>
+                }
+
+                {
+                    !isSeller && (
+                        <h2 className="text-xl font-semibold">{restaurant.name}</h2>
+                    )
                 }
 
                 {

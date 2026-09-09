@@ -5,8 +5,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { authService } from "../main";
-import type { AppContextType, LocationData, User } from "../types";
+import { authService, restaurantService } from "../main";
+import type { AppContextType, ICart, LocationData, User } from "../types";
 import axios from "axios";
 import { Toaster } from "react-hot-toast";
 
@@ -44,9 +44,36 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     }
   }
 
+  const [cart, setCart] = useState<ICart[]>([])
+  const [subTotal, setSubTotal] = useState(0)
+  const [quantity, setQuantity] = useState(0)
+
+  async function fetchCart() {
+    if (!user || user.role !== "customer") return;
+    try {
+      const { data } = await axios.get(`${restaurantService}/api/v1/cart/all`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      })
+
+      setCart(data.cart || [])
+      setSubTotal(data.subTotal || 0)
+      setQuantity(data.cartLength)
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   useEffect(() => {
     fetchUser();
   }, []);
+
+  useEffect(() => {
+    if (user && user.role === "customer") {
+      fetchCart();
+    }
+  }, [user])
 
   useEffect(() => {
     if (!navigator.geolocation)
@@ -71,30 +98,45 @@ export const AppProvider = ({ children }: AppProviderProps) => {
 
         setCity(
           data.address.city ||
-            data.address.town ||
-            data.address.village ||
-            "Your current location",
+          data.address.town ||
+          data.address.village ||
+          "Your current location",
         );
         setLoadingLocation(false)
       } catch (error) {
         setLocation({
-            latitude,
-            longitude,
-            formatedAddress: "Current Location"
+          latitude,
+          longitude,
+          formatedAddress: "Current Location"
         })
 
         setCity("Faild to load")
         setLoadingLocation(false)
       }
     });
-  },[]);
+  }, []);
 
   return (
     <AppContext.Provider
-      value={{ isAuth, loading, setIsAuth, setLoading, setUser, user, location, loadingLocation, city }}
+      value={
+        {
+        isAuth,
+        loading, 
+        setIsAuth, 
+        setLoading,
+        setUser, 
+        user, 
+        location, 
+        loadingLocation, 
+        city,
+        cart,
+        fetchCart,
+        quantity,
+        subTotal,
+      }}
     >
       {children}
-       <Toaster/>
+      <Toaster />
     </AppContext.Provider>
   );
 };

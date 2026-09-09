@@ -2,11 +2,12 @@ import { useState } from "react";
 import type { IMenu } from "../types";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { BiTrash } from "react-icons/bi";
-import { BsCart } from "react-icons/bs";
+import { BsCartPlus } from "react-icons/bs";
 import { VscLoading } from "react-icons/vsc";
 import axios from "axios";
 import { restaurantService } from "../main";
 import toast from "react-hot-toast";
+import { useAppData } from "../context/AppContext";
 
 interface MenuItemsProps {
   itmes: IMenu[];
@@ -46,13 +47,32 @@ const MenuItem = ( {itmes, onItemDeleted, isSeller}: MenuItemsProps) => {
       toast.error("Failed to update status")
     }
   }
+
+  const { fetchCart } = useAppData();
+  
+  const addToCart = async(restaurantId: string, itemId: string)=> {
+    try {
+      setLoadingItemId(itemId);
+
+      const { data } = await axios.post(`${restaurantService}/api/v1/cart/add`, {restaurantId, itemId}, {headers: {Authorization: `Bearer ${localStorage.getItem('token')}`}})
+
+      toast.success(data.message);
+      fetchCart()
+    } catch (error:any) {
+      toast.error(error?.response?.data?.message)
+    }finally{
+     setLoadingItemId(null) 
+    }
+  }
   return (
     <div className="grid grid-col-1 gap-4 sm:grid-col-2 md:grid-col-3 lg:grid-col-4">
       {
         itmes.map((item)=> {
           const isLoading = loadingItemId === item._id;
 
-          return <div className={`flex flex-col relative gap-4 rounded-lg  p-4 bg-custom border border-gray-500 transition ${!item.isAvailable ? "opacity-70" : ""}`}>
+          return <div className={`flex flex-col relative gap-4 rounded-lg  p-4 bg-custom border border-gray-500 transition ${!item.isAvailable ? "opacity-70" : ""}`}
+          key={item._id}
+          >
             <div className="relative shrink-0">
               <img src={item.image} alt="" className={`h-20 w-20 rounded object-cover ${!item.isAvailable ? "grayscale brightness-75": ""}`} />
               {
@@ -92,9 +112,9 @@ const MenuItem = ( {itmes, onItemDeleted, isSeller}: MenuItemsProps) => {
                 !isSeller && 
                 <button 
                 disabled={!item.isAvailable || isLoading} 
-                onClick={()=>{}}
-                className={`flex items-center justify-center rounded-lg p-2 ${!item.isAvailable || isLoading? "cursor-not-allowed text-gray-400 ": " text-orange-500 hover:bg-orange-50"}`}
-                > {isLoading ? <VscLoading size={18} className="animate-spin "/> : <BsCart size={18}/>} </button>
+                onClick={()=> addToCart(item.restaurantId, item._id)}
+                className={`flex items-center justify-center rounded-lg p-2 cursor-pointer ${!item.isAvailable || isLoading? "cursor-not-allowed text-gray-400 ": " text-orange-500 hover:text-orange-600 border border-gray-400 hover:border-gray-500"}`}
+                > {isLoading ? <VscLoading size={18} className="animate-spin "/> : <BsCartPlus size={18}/>} </button>
               }
             </div>
           </div>

@@ -7,7 +7,7 @@ import { oauth2client } from "../config/googleConfig.js";
 import axios from "axios";
 
 export const loginUser = TryCatch(async(req, res) =>{
-    const {code} = req.body;
+    const { code } = req.body;
     if(!code){
         return res.status(400).json({message: "Authorization code is required"})
     }
@@ -48,7 +48,7 @@ export const addUserRole = TryCatch(async(req: AuthenticatedRequest, res) => {
         return res.status(401).json({message: "Unauthorized"})
     }
 
-    const {role} = req.body as {role: Role};
+    const { role } = req.body as {role: Role};
 
     if(!allowedRoles.includes(role)){
         return res.status(400).json({message: "Invalid role"})

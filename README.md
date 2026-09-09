@@ -216,8 +216,8 @@ The following features are planned for BiteRush:
 * [X] Food/menu management
 * [X] Cart functionality
 * [ ] Order service
-* [ ] Order management
-* [ ] Payment integration
+* [x] Order management
+* [] Payment integration
 * [ ] Delivery service
 * [ ] Real-time order tracking
 * [ ] Admin panel
@@ -225,6 +225,52 @@ The following features are planned for BiteRush:
 * [ ] Production deployment
 
 ---
+
+## Razorpay's official flow
+
+Create Order → Open Checkout → Payment → Verify Signature → Update Order → Webhook confirmation
+
+Customer
+   │
+   │ Click "Place Order & Pay"
+   ▼
+Frontend (React + TS)
+   │
+   │ POST /payments/create-order
+   ▼
+Utils / Payment Service
+   │
+   │ Razorpay Orders API
+   ▼
+Razorpay
+   │
+   │ returns razorpay_order_id
+   ▼
+Frontend
+   │
+   │ Opens Razorpay Checkout
+   ▼
+Customer completes payment
+   │
+   ▼
+Frontend receives:
+   ├── razorpay_payment_id
+   ├── razorpay_order_id
+   └── razorpay_signature
+   │
+   │ send to Payment Service
+   ▼
+Utils / Payment Service
+   │
+   │ Verify signature using KEY_SECRET
+   ▼
+Payment verified
+   │
+   ▼
+Order Service / Restaurant Service
+   │
+   ▼
+Order = PAID
 
 ## 🔮 Future Improvements
 
