@@ -6,15 +6,15 @@ import { IMenu } from "../models/Menu.model.js";
 import Order from "../models/Order.model.js";
 import Restaurant, { IRestaurant } from "../models/Restaurant.model.js";
 
-export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
+export const createOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
     const user = req.user;
-    if(!user){
-        return res.status(401).json({message: "Unauthorized"})
+    if (!user) {
+        return res.status(401).json({ message: "Unauthorized" })
     }
 
-    const { paymentMethod, addressId, distance } = req.body;
-    if(!addressId){
-        return res.status(404).json({message: "Address is required"})
+    const { paymentMethod, addressId } = req.body;
+    if (!addressId) {
+        return res.status(404).json({ message: "Address is required" })
     }
 
     const address = await Address.findOne({
@@ -22,23 +22,35 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
         userId: user._id,
     })
 
-    if(!address){
+    if (!address) {
         return res.status(404).json({
             message: "Address is not found"
         })
     }
 
-    const cartItems = await Cart.find({userId: user._id})
-    .populate<{itemId: IMenu}>("itemId")
-    .populate<{restaurant: IRestaurant}>("restaurantId")
+    const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const R = 6371;
+        const dLat = ((lat2 - lat1) * Math.PI) / 180;
+        const dLon = ((lon2 - lon1) * Math.PI) / 180;
 
-    if(cartItems.length === 0){
-        return res.status(400).json({message: "Cart is Empty"})
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+
+        return +(R * c).toFixed(2)
+    }
+
+    const cartItems = await Cart.find({ userId: user._id })
+        .populate<{ itemId: IMenu }>("itemId")
+        .populate<{ restaurant: IRestaurant }>("restaurantId")
+
+    if (cartItems.length === 0) {
+        return res.status(400).json({ message: "Cart is Empty" })
     }
 
     const firstCartItem = cartItems[0];
 
-    if(!firstCartItem || !firstCartItem.restaurantId){
+    if (!firstCartItem || !firstCartItem.restaurantId) {
         return res.status(400).json({
             message: "Invalid Cart Data"
         })
@@ -47,27 +59,33 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
     const restaurantId = firstCartItem.restaurantId._id;
     const restaurant = await Restaurant.findById(restaurantId);
 
-    if(!restaurant){
-        return res.status(404).json({message: "No restaurant with this id"})
+    if (!restaurant) {
+        return res.status(404).json({ message: "No restaurant with this id" })
     }
 
-    if(!restaurant.isOpen){
-        return res.status(400).json({message: "Oops this restaurant is closed for now"})
+    if (!restaurant.isOpen) {
+        return res.status(400).json({ message: "Oops this restaurant is closed for now" })
     }
 
+    const distance = getDistanceKm(
+        address.location.coordinates[1],
+        address.location.coordinates[0],
+        restaurant.autoLocation.coordinates[1],
+        restaurant.autoLocation.coordinates[0],
+    );
     let subTotal = 0;
 
-    const orderItems = cartItems.map((cart)=>{
+    const orderItems = cartItems.map((cart) => {
         const item = cart.itemId;
 
-        if(!item){
+        if (!item) {
             throw new Error("Invalid cart item")
         }
 
         const itemTotal = item.price * cart.quantity
 
         subTotal += itemTotal
-        
+
         return {
             itemId: item._id.toString(),
             name: item.name,
@@ -82,7 +100,7 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
 
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    const [longitude,  latitude] = address.location.coordinates;
+    const [longitude, latitude] = address.location.coordinates;
 
     const riderAmount = Math.ceil(distance) * 17
 
@@ -104,7 +122,7 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
             mobile: address.mobile,
             latitude,
             longitude,
-        }, 
+        },
         paymentMethod,
         paymentStatus: "pending",
         status: "placed",
@@ -112,7 +130,7 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
 
     })
 
-    await Cart.deleteMany({userId: user._id});
+    await Cart.deleteMany({ userId: user._id });
 
     res.json({
         success: true,
@@ -122,8 +140,8 @@ export const createOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
     })
 })
 
-export const fetchOrderForPayment = TryCatch(async(req, res) => {
-    if(!req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY){
+export const fetchOrderForPayment = TryCatch(async (req, res) => {
+    if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
         return res.status(403).json({
             message: "Forbidden",
         })
@@ -131,11 +149,11 @@ export const fetchOrderForPayment = TryCatch(async(req, res) => {
 
     const order = await Order.findById(req.params.id)
 
-    if(!order){
-        return res.status(404).json({message: "Order not found"})
+    if (!order) {
+        return res.status(404).json({ message: "Order not found" })
     }
 
-    if(order.paymentStatus !== "pending"){
+    if (order.paymentStatus !== "pending") {
         return res.status(400).json({
             message: "Order already paid"
         })

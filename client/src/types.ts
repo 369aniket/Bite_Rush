@@ -60,6 +60,7 @@ export interface IMenu {
 }
 
 export interface ICart {
+    _id: string;
     userId: string;
     restaurantId: string | IRestaurant;
     itemId: string | IMenu;

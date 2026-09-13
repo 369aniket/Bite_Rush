@@ -9,7 +9,7 @@ export const verifyRazorpaySignature = (
     const body = `${orderId}|${paymentId}`
 
     const expectedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_TEST_KEY_SECRET!)
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
     .update(body)
     .digest("hex")
 
