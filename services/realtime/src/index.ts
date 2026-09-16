@@ -12,7 +12,7 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 
-app.use('api/v1/internal', internalRoute)
+app.use('/api/v1/internal', internalRoute)
 
 const server = http.createServer(app); 
 

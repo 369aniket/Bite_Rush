@@ -1,3 +1,4 @@
+import axios from "axios";
 import { AuthenticatedRequest } from "../middlewares/isAuth.js";
 import TryCatch from "../middlewares/tryCatch.js";
 import Address from "../models/Address.model.js";
@@ -163,5 +164,162 @@ export const fetchOrderForPayment = TryCatch(async (req, res) => {
         orderId: order._id,
         amount: order.totalAmount,
         currency: "INR",
+    })
+})
+
+export const fetchRestaurantOrders = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const user = req.user;
+
+    const { restaurantId } = req.params;
+
+    if (!user) {
+        return res.status(400).json({ message: "Unauthorized or user is missing" })
+    }
+
+    if (!restaurantId) {
+        return res.status(400).json({ message: "RestaurantId is missing" })
+    }
+
+
+    const { limit } = req.query.limit ? Number(req.query.limit) : 0;
+    
+    const orders = await Order.find({
+        restaurantId,
+        paymentStatus: 'paid',
+    }).sort({ createdAt: -1 }).limit(limit)
+
+    return res.json({
+        success: true,
+        count: orders.length,
+        orders,
+    })
+})
+
+const ALLOWED_STATUSES = ['accepted', 'preparing', 'ready_for_rider'] as const;
+
+export const updateOrderStatus = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const user = req.user;
+    const { orderId } = req.params;
+    const { status } = req.body;
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+        return res.status(400).json({
+            message: 'Invalid order status'
+        })
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return res
+            .status(400)
+            .json({
+                message: "Order not found"
+            })
+    }
+
+    if (order.paymentStatus !== "paid") {
+        return res
+            .status(404)
+            .json({
+                message: "Order not completed"
+            })
+    }
+
+    const restaurant = await Restaurant.findById(order.restaurantId)
+
+    if (!restaurant) {
+        return res
+            .status(404)
+            .json({
+                message: "Restaurant not found",
+            })
+    }
+
+    if (restaurant.ownerId !== user?._id.toString()) {
+        return res
+            .status(401)
+            .json({
+                message: "Since you are not owner of this Restaurant, you can't update the order",
+            })
+    }
+
+    order.status = status;
+    await order.save();
+
+    await axios.post(`${process.env.REALTIME_SERVICE}/api/v1/internal/emit`,
+        {
+            event: "order:update",
+            room: `user:${order.userId}`,
+            payload: {
+                orderId: order._id,
+                status: order.status,
+            }
+        }, {
+        headers: {
+            "x-internal-key": process.env.INTERNAL_SERVICE_KEY,
+        }
+    })
+    // now assign riders
+
+
+    res.json({
+        message: "order status updated successfully",
+        order,
+    })
+})
+
+export const getMyOrders = TryCatch(async(req:AuthenticatedRequest, res) => {
+    const user = req.user;
+    if(!user) {
+        return res
+        .status(401)
+        .json({
+            message: "Unauthorized"
+        })
+    }
+
+    const orders = await Order.find({
+        userId: user._id.toString(),
+        paymentStatus: 'paid',
+    }).sort({createdAt: -1})
+
+    res.json({
+        success: true,
+        message: "Order fetched successfully",
+        orders,
+    })
+})
+
+
+export const fetchSingleOrder = TryCatch(async(req: AuthenticatedRequest, res) => {
+    const user = req.user;
+    if(!user) {
+        return res
+        .status(401)
+        .json({
+            message: "Unauthorized"
+        })
+    }
+
+    const order = await Order.findById(req.params.id);
+    if(!order){
+        return res
+        .status(404)
+        .json({
+            message: 'Order not found'
+        })
+    }
+
+    if(order.userId !== user._id.toString()){
+        return res
+        .status(401)
+        .json({
+            message: "You are not allowed to view this order"
+        })
+    }
+
+    return res.json({
+        success: true,
+        order,
     })
 })
