@@ -55,12 +55,10 @@ export const isAuth = async (
                 _id: decodedToken.userId || '',
                 name: decodedToken.name || '',
                 email: decodedToken.email || '',
-                role: decodedToken.role || 'seller',
+                role: decodedToken.role || 'customer',
                 restaurantId: decodedToken.restaurantId || '',
                 image: decodedToken.image || ''
             };
-
-
 
             next();
         } catch (jwtError) {
@@ -104,7 +102,6 @@ export const isSeller = async (
     next: NextFunction
 ): Promise<void> => {
     const user = req.user;
-    console.log(user)
 
     if (!user) {
         res

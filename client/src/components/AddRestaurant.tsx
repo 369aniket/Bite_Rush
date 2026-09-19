@@ -63,7 +63,7 @@ const AddRestaurant = ({fetchRestaurant}:props) => {
             type="number"
             placeholder="Contact Number"
             value={phone} onChange={(e)=> setPhone(e.target.value)} 
-            className="w-full text-black rounded-lg border border-orange-500 px-4 py-2 text-sm outline-none"
+            className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full text-black rounded-lg border border-orange-500 px-4 py-2 text-sm outline-none"
             />
 
             <textarea
@@ -90,7 +90,7 @@ const AddRestaurant = ({fetchRestaurant}:props) => {
             </div>
 
             <button 
-            className="w-full rounded-lg pt-3 text-sm font-semibold text-gray-50 bg-orange-500 "
+            className="w-full rounded-lg p-2 text-sm font-semibold text-gray-50 bg-orange-500 "
             disabled={submitting}
             onClick={handleSubmit}
             >

@@ -4,7 +4,6 @@ import { useSocket } from "../context/SocketContext"
 import audio from '../assets/msg-received.mp3'
 import { restaurantService } from "../main"
 import axios from "axios"
-import { divIcon } from "leaflet"
 import { BiBell } from "react-icons/bi"
 import OrderCart from "./OrderCart"
 
@@ -75,6 +74,25 @@ const RestaurantOrders = ({ restaurantId }: { restaurantId: string }) => {
             socket.off("order:new", onNewOrder)
         }
     }, [socket, audioUnlocked])
+    
+
+    // Rider update 
+    
+    useEffect(() => {
+        if (!socket) {
+            return;
+        }
+
+        const onUpdateOrder = () => {
+            fetchOrders()
+        }
+
+        socket.on('order:rider_assigned', onUpdateOrder);
+
+        return () => {
+            socket.off('order:rider_assigned', onUpdateOrder)
+        }
+    }, [socket])
 
     if (loading) {
         return (
@@ -91,7 +109,7 @@ const RestaurantOrders = ({ restaurantId }: { restaurantId: string }) => {
             {!audioUnlocked &&
                 <div className="border border-blue-200 rounded-lg p-4 flex items-center justify-between">
                     <div className="flex items-center justify-between gap-3">
-                        <span className="text-2xl "><BiBell size={18}/></span>
+                        <span className="text-2xl "><BiBell size={18} /></span>
                         <div>
                             <p className="font-medium text-blue-500">Enable Sound Notification</p>
                             <p className="text-sm text-blue-600">Get Notified when new orders arrive</p>
@@ -107,10 +125,10 @@ const RestaurantOrders = ({ restaurantId }: { restaurantId: string }) => {
             <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Active Orders</h3>
                 {
-                    activeOrders.length  === 0 ? <p className="text-sm text-gray-500">No Active Orders</p> : <div className="grid grid-cols-2 md-grid-cols-3 gap-4">
+                    activeOrders.length === 0 ? <p className="text-sm text-gray-500">No Active Orders</p> : <div className="grid grid-cols-2 md-grid-cols-3 gap-4">
                         {
                             activeOrders.map((order) => (
-                                <OrderCart key={order._id} order={order} onStatusUpdate={fetchOrders}/>
+                                <OrderCart key={order._id} order={order} onStatusUpdate={fetchOrders} />
                             ))
                         }
                     </div>
@@ -122,10 +140,10 @@ const RestaurantOrders = ({ restaurantId }: { restaurantId: string }) => {
             <div className="space-y-3">
                 <h3 className="text-lg font-semibold">Completed Orders</h3>
                 {
-                    completedOrders.length  === 0 ? <p className="text-sm text-gray-500">No Completed Orders</p> : <div className="grid grid-cols-1 md-grid-cols-2 gap-4">
+                    completedOrders.length === 0 ? <p className="text-sm text-gray-500">No Completed Orders</p> : <div className="grid grid-cols-1 md-grid-cols-2 gap-4">
                         {
                             completedOrders.map((order) => (
-                                <OrderCart key={order._id} order={order} onStatusUpdate={fetchOrders}/>
+                                <OrderCart key={order._id} order={order} onStatusUpdate={fetchOrders} />
                             ))
                         }
                     </div>
