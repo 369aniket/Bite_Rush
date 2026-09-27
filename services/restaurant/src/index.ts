@@ -27,7 +27,7 @@ app.use('/api/v1/order', orderRoutes)
 
 const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, ()=>{
+app.listen(PORT, () => {
     console.log(`Restaurant service is running on PORT ${PORT}`)
     connectDB()
 })

@@ -398,20 +398,25 @@ export const assignOrderToRider = TryCatch(async (req, res) => {
 })
 
 export const getCurrentOrdersForRider = TryCatch(async (req, res) => {
-    if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
-        return res.status(403).json({ message: 'Forbidden' })
-    }
 
     const { riderId } = req.query;
+
+
+    if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
+        console.log("❌ Internal key mismatch");
+        return res.status(403).json({ message: 'Forbidden' })
+    }
 
     if (!riderId) {
         return res.status(400).json({ message: 'Rider Id is required' })
     }
 
+
     const order = await Order.findOne({
         riderId,
         status: { $ne: 'delivered' }
     }).populate("restaurantId");
+
 
     if (!order) {
         return res.status(404).json({ message: 'Order not found' })
@@ -421,7 +426,6 @@ export const getCurrentOrdersForRider = TryCatch(async (req, res) => {
         order,
     })
 })
-
 
 export const updateOrderStatusByRider = TryCatch(async (req, res) => {
     if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {

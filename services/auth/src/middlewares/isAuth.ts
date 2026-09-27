@@ -53,27 +53,17 @@ export const isAuth = async (
             });
             return;
         }
-        if (!decodedToken.userId) {
+
+
+        if (!decodedToken?.user || !decodedToken) {
             res.status(401).json({
                 success: false,
                 message: "Invalid token - User ID missing"
             });
             return; 
         }
-
-   
-        const user = await User.findById(decodedToken.userId)
-            .select('-token -tokenCreatedAt -password');
         
-        if (!user) {
-            res.status(401).json({
-                success: false,
-                message: "User not found"
-            });
-            return; 
-        }
-
-        req.user = user;
+        req.user = decodedToken.user;
         next(); 
 
     } catch (error) {

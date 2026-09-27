@@ -6,7 +6,6 @@ import { Rider } from "../model/Rider.model.js";
 
 export const addRiderProfile = TryCatch(async (req: AuthenticatedRequest, res) => {
     const user = req.user;
-
     if (!user) {
         return res.status(401)
             .json({
@@ -42,9 +41,6 @@ export const addRiderProfile = TryCatch(async (req: AuthenticatedRequest, res) =
     }
 
     const { data: uploadResult } = await axios.post(`${process.env.UTILS_SERVICE}/api/v1/upload`, { buffer: fileBuffer.content })
-
-    console.log("Utils response:", uploadResult);
-
     const {
         phoneNumber,
         aadharNumber,
@@ -109,7 +105,6 @@ export const fetchMyProfile = TryCatch(async (req: AuthenticatedRequest, res) =>
 
 export const toggleRiderAvailability = TryCatch(async (req: AuthenticatedRequest, res) => {
     const user = req.user;
-
     if (!user) {
         return res.status(401)
             .json({
@@ -197,7 +192,7 @@ export const acceptOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
                 isAvailable: true,
             }, { isAvailable: false }, { new: true })
 
-            res.json({message: 'Order accepted'})
+            res.json({ message: 'Order accepted' })
         }
     } catch (error) {
         res.status(400).json({
@@ -206,57 +201,58 @@ export const acceptOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
     }
 })
 
-export const fetchMyCurrentOrder = TryCatch(async( req: AuthenticatedRequest, res) => {
+export const fetchMyCurrentOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
+
     const riderUserId = req.user?._id;
 
-    if(!riderUserId){
-        return res.status(400).json({message:'Please login'})
+    if (!riderUserId) {
+        return res.status(400).json({ message: 'Please login' })
     }
 
-    const rider = await Rider.findOne({userId: riderUserId, isVerified: true})
-    if(!rider){
-        return res.status(404).json({message: 'Rider not found'})
+    const rider = await Rider.findOne({ userId: riderUserId, isVerified: true })
+    if (!rider) {
+        return res.status(404).json({ message: 'Rider not found' })
     }
 
     try {
         const { data } = await axios.get(`${process.env.RESTAURANT_SERVICE}/api/v1/order/current/rider?riderId=${rider._id}`,
-            { 
-                headers:{
-                    'x-internal-key':process.env.INTERNAL_SERVICE_KEY
-        }})
-
-        res.json({order: data})
+            {
+                headers: {
+                    'x-internal-key': process.env.INTERNAL_SERVICE_KEY
+                }
+            })
+        res.json(data)
 
     } catch (error: any) {
         res.status(500)
-        .json(
-            { message: error?.response?.data?.message || "Something went wrong in fetching current Order"})
+            .json(
+                { message: error?.response?.data?.message || "Something went wrong in fetching current Order" })
     }
 })
 
-export const updateOrderStatusByRider = TryCatch(async(req: AuthenticatedRequest, res) => {
+export const updateOrderStatusByRider = TryCatch(async (req: AuthenticatedRequest, res) => {
     const userId = req.user?._id;
-    if(!userId){
-        return res.status(401).json({message: 'Please Login'})
+    if (!userId) {
+        return res.status(401).json({ message: 'Please Login' })
     }
 
-    const rider = await Rider.findOne({userId: userId})
+    const rider = await Rider.findOne({ userId: userId })
 
-    if(!rider){
-        return res.status(404).json({message: 'Please Login'})
+    if (!rider) {
+        return res.status(404).json({ message: 'Please Login' })
     }
 
     const { orderId } = req.params;
 
     try {
-        const { data } = await axios.put(`${process.env.RESTAURANT_SERVICE}/api/v1/order/update/status/rider`,{orderId}, {
+        const { data } = await axios.put(`${process.env.RESTAURANT_SERVICE}/api/v1/order/update/status/rider`, { orderId }, {
             headers: {
                 'x-internal-key': process.env.INTERNAL_SERVICE_KEY,
             }
         })
 
-        res.json({message:data.message})
+        res.json({ message: data.message })
     } catch (error) {
-        res.status(500).json({message: 'Internal server error'})
+        res.status(500).json({ message: 'Internal server error' })
     }
 })

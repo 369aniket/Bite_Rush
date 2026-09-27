@@ -6,10 +6,10 @@ import { AuthenticatedRequest } from "../middlewares/isAuth.js";
 import { oauth2client } from "../config/googleConfig.js";
 import axios from "axios";
 
-export const loginUser = TryCatch(async(req, res) =>{
+export const loginUser = TryCatch(async (req, res) => {
     const { code } = req.body;
-    if(!code){
-        return res.status(400).json({message: "Authorization code is required"})
+    if (!code) {
+        return res.status(400).json({ message: "Authorization code is required" })
     }
 
     const googleRes = await oauth2client.getToken(code);
@@ -18,23 +18,27 @@ export const loginUser = TryCatch(async(req, res) =>{
 
     const userRes = await axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=${googleRes.tokens.access_token}`)
 
-    const {name, email, image} = userRes.data;
+    const { name, email, image } = userRes.data;
 
-        let user = await User.findOne({ email })
+    let user = await User.findOne({ email })
 
     if (!user) {
         user = await User.create({
-        name,
-        email,
-        image,
-    })
+            name,
+            email,
+            image,
+        })
     }
 
-        const token = jwt.sign({userId:user._id, name:user.name, email:user.email}, process.env.JWT_SECRET as string, {expiresIn:'15d'});
+    const token = jwt.sign(
+        {
+            user
+        },
+        process.env.JWT_SECRET as string, { expiresIn: '15d' });
 
-        res.status(200)
+    res.status(200)
         .json({
-            message:'Login Successfull',
+            message: 'Login Successfull',
             token,
             user,
         })
@@ -43,29 +47,33 @@ export const loginUser = TryCatch(async(req, res) =>{
 const allowedRoles = ["customer", "rider", "seller"] as const;
 type Role = (typeof allowedRoles)[number];
 
-export const addUserRole = TryCatch(async(req: AuthenticatedRequest, res) => {
-    if(!req.user?._id){
-        return res.status(401).json({message: "Unauthorized"})
+export const addUserRole = TryCatch(async (req: AuthenticatedRequest, res) => {
+    if (!req.user?._id) {
+        return res.status(401).json({ message: "Unauthorized" })
     }
 
-    const { role } = req.body as {role: Role};
+    const { role } = req.body as { role: Role };
 
-    if(!allowedRoles.includes(role)){
-        return res.status(400).json({message: "Invalid role"})
+    if (!allowedRoles.includes(role)) {
+        return res.status(400).json({ message: "Invalid role" })
     }
 
-    const user = await User.findByIdAndUpdate(req.user._id, {role}, {new:true})
+    const user = await User.findByIdAndUpdate(
+        req.user._id, 
+        { role }, 
+        { new: true }
+    )
 
-    if(!user) {
-        return res.status(404).json({ message: "User not found"})
+    if (!user) {
+        return res.status(404).json({ message: "User not found" })
     }
 
-    const token = jwt.sign({userId:user._id, name:user.name, email:user.email, role: user.role}, process.env.JWT_SECRET as string, {expiresIn: '15d'})
+    const token = jwt.sign({ user }, process.env.JWT_SECRET as string, { expiresIn: '15d' })
 
-    res.json({user, token})
+    res.json({ user, token })
 })
 
-export const myProfile = TryCatch(async (req: AuthenticatedRequest, res) =>{
+export const myProfile = TryCatch(async (req: AuthenticatedRequest, res) => {
     const user = req.user;
     res.json(user)
 })

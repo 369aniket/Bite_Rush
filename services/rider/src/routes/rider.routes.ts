@@ -7,7 +7,7 @@ const router = express.Router()
 
 router.post(`/new`, isAuth, uploadFile, addRiderProfile)
 router.get(`/my-profile`, isAuth, fetchMyProfile)
-router.patch(`/toggle`, isAuth, toggleRiderAvailability)
+router.patch(`/toggle`,isAuth, toggleRiderAvailability)
 router.post('/accept/:orderId', isAuth, acceptOrder)
 router.get('/order/current', isAuth, fetchMyCurrentOrder)
 router.put('/order/update/:orderId',isAuth, updateOrderStatusByRider )

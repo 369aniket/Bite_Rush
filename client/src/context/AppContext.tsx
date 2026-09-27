@@ -34,7 +34,6 @@ export const AppProvider = ({ children }: AppProviderProps) => {
           Authorization: `Bearer ${token}`,
         },
       });
-
       setUser(data);
       setIsAuth(true);
     } catch (error) {

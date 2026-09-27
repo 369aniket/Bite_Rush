@@ -45,19 +45,18 @@ export const isAuth = async (
         let decodedToken: JwtPayload;
         try {
             decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-
             if (!decodedToken) {
                 res.status(401).json({ message: "Token is missin or Invalid" })
                 return
             }
 
                 req.user = {
-                _id: decodedToken.userId || '',
-                name: decodedToken.name || '',
-                email: decodedToken.email || '',
-                role: decodedToken.role || 'customer',
-                restaurantId: decodedToken.restaurantId || '',
-                image: decodedToken.image || ''
+                _id: decodedToken?.user?._id || '',
+                name: decodedToken?.user?.name || '',
+                email: decodedToken?.user?.email || '',
+                role: decodedToken?.user?.role || 'customer',
+                restaurantId: decodedToken?.user?.restaurantId || '',
+                image: decodedToken?.user?.image || ''
             };
 
             next();

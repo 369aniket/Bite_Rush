@@ -5,12 +5,16 @@ import jwt, { JwtPayload } from 'jsonwebtoken'
 let io: Server;
 
 interface AuthTokenPayload {
-    userId: string;
-    name?: string;
-    email?: string;
-    role?: string;
-    restaurantId?: string;
-    [key: string]: any;
+    user: {
+        _id: string;
+        name?: string;
+        email?: string;
+        role?: string;
+        restaurantId?: string;
+        image?: string;
+    };
+    iat?: number;
+    exp?: number;
 }
 
 export const initSocket = (server: http.Server): Server => {
@@ -21,41 +25,48 @@ export const initSocket = (server: http.Server): Server => {
         }
     });
 
-    io.use((socket: Socket, next) => {
-        try {
-            const token = socket.handshake.auth?.token;
+  io.use((socket: Socket, next) => {
+    try {
+        const token = socket.handshake.auth?.token;
 
-            if (!token) {
-                return next(new Error("Unauthorized: No token provided"));
-            }
-
-            const secret = process.env.JWT_SECRET;
-            if (!secret) {
-                console.error("Socket auth error: JWT_SECRET is not defined in .env");
-                return next(new Error("Internal Server Error"));
-            }
-
-            const decoded = jwt.verify(token, secret) as AuthTokenPayload;
-
-            if (!decoded || !decoded.userId) {
-                return next(new Error("Unauthorized: User ID missing"));
-            }
-
-            // Normalizing payload into socket.data.user
-            socket.data.user = {
-                _id: decoded.userId,
-                name: decoded.name,
-                email: decoded.email,
-                role: decoded.role,
-                restaurantId: decoded.restaurantId
-            };
-
-            next();
-        } catch (error: any) {
-            console.error(`Socket auth failed: ${error.message}`);
-            next(new Error("Unauthorized: " + error.message));
+        if (!token) {
+            return next(new Error("Unauthorized: No token provided"));
         }
-    });
+
+        const secret = process.env.JWT_SECRET;
+
+        if (!secret) {
+            console.error("Socket auth error: JWT_SECRET is not defined in .env");
+            return next(new Error("Internal Server Error"));
+        }
+
+        const decoded = jwt.verify(
+            token,
+            secret
+        ) as AuthTokenPayload;
+
+        const user = decoded.user;
+
+        if (!user || !user._id) {
+            return next(new Error("Unauthorized: User ID missing"));
+        }
+
+        socket.data.user = {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            restaurantId: user.restaurantId,
+            image: user.image
+        };
+
+        next();
+
+    } catch (error: any) {
+        console.error(`Socket auth failed: ${error.message}`);
+        next(new Error("Unauthorized: " + error.message));
+    }
+});
 
     io.on('connection', (socket: Socket) => {
         const user = socket.data.user;

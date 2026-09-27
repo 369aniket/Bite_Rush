@@ -28,10 +28,6 @@ const userSchema: Schema<IUser> = new Schema({
         type: String,
         default: null,
     },
-    token: {
-        type: String,
-        default: null,
-    },
 }, {timestamps: true})
 
 const User = mongoose.model<IUser>("User", userSchema)

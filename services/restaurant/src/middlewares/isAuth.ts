@@ -27,42 +27,24 @@ export const isAuth = async (
                 success: false,
                 message: "Please login - No auth header"
             });
-            return;
+            return; 
         }
 
         const token = authHeader.split(' ')[1];
-
-
+        
+    
         if (!token) {
             res.status(401).json({
                 success: false,
-                message: "Please login - Token missing"
+                message: "Please login - Token missing restaurant service"
             });
-            return;
+            return; 
         }
 
 
         let decodedToken: JwtPayload;
         try {
             decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as JwtPayload;
-
-            if (!decodedToken) {
-                res.status(401).json({ message: "Token is missin or Invalid" })
-                return
-            }
-
-                req.user = {
-                _id: decodedToken.userId || '',
-                name: decodedToken.name || '',
-                email: decodedToken.email || '',
-                role: decodedToken.role || 'seller',
-                restaurantId: decodedToken.restaurantId || '',
-                image: decodedToken.image || ''
-            };
-
-
-
-            next();
         } catch (jwtError) {
 
             if (jwtError instanceof jwt.TokenExpiredError) {
@@ -72,7 +54,6 @@ export const isAuth = async (
                 });
                 return;
             }
-
             res.status(401).json({
                 success: false,
                 message: "Invalid token - Please login again"
@@ -80,16 +61,26 @@ export const isAuth = async (
             return;
         }
 
+        
+        if (!decodedToken?.user || !decodedToken) {
+            res.status(401).json({
+                success: false,
+                message: "Invalid token - User ID missing"
+            });
+            return; 
+        }
+        
+        req.user = decodedToken.user;
+        next(); 
 
     } catch (error) {
 
-        console.error(" Auth middleware error:", error);
-
+        console.error("Auth middleware error:", error);
 
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
-                message: "Authentication failed",
+                message: "Authentication failed ",
                 error: error instanceof Error ? error.message : "Unknown error"
             });
         }
@@ -104,8 +95,6 @@ export const isSeller = async (
     next: NextFunction
 ): Promise<void> => {
     const user = req.user;
-    console.log(user)
-
     if (!user) {
         res
             .status(401)
