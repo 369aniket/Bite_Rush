@@ -501,3 +501,49 @@ export const updateOrderStatusByRider = TryCatch(async (req, res) => {
         })
     }
 })
+
+export const getDeliveredOrdersByRider = TryCatch(async (req: AuthenticatedRequest, res) => {
+    // 1. Internal microservice security check
+    if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
+        return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const riderId = (req.query.riderId as string) || (req.params.riderId as string);
+
+    if (!riderId) {
+        return res.status(400).json({ message: 'Rider Id is required' });
+    }
+
+    // 2. Sirf 'delivered' status wale orders riderId ke base par fetch karna
+    const orders = await Order.find({
+        riderId,
+        status: 'delivered'
+    }).sort({ updatedAt: -1, createdAt: -1 });
+
+    // 3. Metrics calculate
+    const totalDeliveries = orders.length;
+    const totalEarnings = orders.reduce((sum, order) => sum + (order.riderAmount || 0), 0);
+    const totalDistance = orders.reduce((sum, order) => sum + (order.distance || 0), 0);
+
+    // Aaj ki kamai (12:00 AM se ab tak)
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayOrders = orders.filter((o) => new Date(o.updatedAt || o.createdAt) >= startOfToday);
+    const todayEarnings = todayOrders.reduce((sum, o) => sum + (o.riderAmount || 0), 0);
+
+    // Pichle 7 dino ki kamai
+    const startOfWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const weeklyOrders = orders.filter((o) => new Date(o.updatedAt || o.createdAt) >= startOfWeek);
+    const weeklyEarnings = weeklyOrders.reduce((sum, o) => sum + (o.riderAmount || 0), 0);
+
+    return res.status(200).json({
+        success: true,
+        count: totalDeliveries,
+        totalDeliveries,
+        totalEarnings,
+        todayEarnings,
+        weeklyEarnings,
+        totalDistance: +totalDistance.toFixed(1),
+        orders,
+    });
+});

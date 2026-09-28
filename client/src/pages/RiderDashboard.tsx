@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAppData } from "../context/AppContext";
 import { useSocket } from "../context/SocketContext";
 import axios from "axios";
@@ -12,6 +13,7 @@ import {
   BiLogOut,
   BiCheckShield,
   BiPhone,
+  BiTrendingUp,
 } from "react-icons/bi";
 import { IoFlame } from "react-icons/io5";
 import audio from "../assets/msg-received.mp3";
@@ -42,6 +44,7 @@ interface IRiderResponse {
 const RiderDashboard = () => {
   const { user, setIsAuth, setUser } = useAppData();
   const { socket } = useSocket();
+  const navigate = useNavigate();
 
   const [profile, setProfile] = useState<IRiderAccount | null>(null);
   const [loading, setLoading] = useState(true);
@@ -385,6 +388,15 @@ const RiderDashboard = () => {
               </button>
             )}
 
+            {/* Show Earning Dashboard */}
+            <button
+              onClick={() => navigate("/my-earnings")}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold transition shadow-sm cursor-pointer"
+            >
+              <BiTrendingUp className="text-sm" />
+              <span>Earnings</span>
+            </button>
+
             <button
               onClick={handleLogout}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-800 bg-slate-900/80 text-xs font-semibold text-rose-400 hover:border-rose-500/40 hover:bg-rose-500/10 transition cursor-pointer"
@@ -455,6 +467,29 @@ const RiderDashboard = () => {
               Stay within 500m of dense restaurant clusters to receive optimal dispatch orders and priority routing.
             </span>
           </div>
+
+          {/* Earnings Quick Access Card */}
+          <button
+            onClick={() => navigate("/my-earnings")}
+            className="w-full p-3.5 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-slate-800/60 to-slate-900 border border-emerald-500/30 hover:border-emerald-500/50 text-xs text-slate-300 transition-all flex items-center justify-between group cursor-pointer"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-base shrink-0">
+                <BiTrendingUp />
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-white group-hover:text-emerald-400 transition-colors">
+                  Earnings & Delivery History
+                </p>
+                <p className="text-[11px] text-slate-400">
+                  Track trip payouts & incentives
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg group-hover:bg-emerald-500/20 transition">
+              View &rarr;
+            </span>
+          </button>
 
           {/* Online / Offline Toggle Button */}
           {profile.isVerified && !currentOrder && (

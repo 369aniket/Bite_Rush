@@ -9,7 +9,8 @@ import {
     fetchSingleOrder,
     assignOrderToRider,
     getCurrentOrdersForRider,
-    updateOrderStatusByRider
+    updateOrderStatusByRider,
+    getDeliveredOrdersByRider
 } from '../controllers/order.controller.js';
 
 const router = express.Router()
@@ -19,6 +20,8 @@ router.get('/my-orders', isAuth, getMyOrders)
 router.get('/current/rider', getCurrentOrdersForRider)
 router.put('/assign/rider', assignOrderToRider)
 router.put('/update/status/rider', updateOrderStatusByRider)
+router.get('/delivered/rider', getDeliveredOrdersByRider)
+router.get('/earnings/rider', getDeliveredOrdersByRider)
 router.get('/payment/:id', fetchOrderForPayment)
 router.get('/restaurant/:restaurantId', isAuth, isSeller, fetchRestaurantOrders)
 

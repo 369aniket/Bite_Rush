@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import PublicRoute from "./components/publicRoutes";
@@ -17,6 +17,7 @@ import OrderSuccess from "./pages/OrderSuccess";
 import Orders from "./pages/Orders";
 import OrderPage from "./pages/OrderPage";
 import RiderDashboard from "./pages/RiderDashboard";
+import RiderEarnings from "./pages/RiderEarnings";
 import Admin from "./pages/Admin";
 import { IoFlame } from "react-icons/io5";
 
@@ -46,8 +47,15 @@ const App = () => {
     return <Restaurant />;
   }
 
+  // Rider Routes: / par Dashboard aur /my-earnings par Earnings
   if (user && user.role === "rider") {
-    return <RiderDashboard />;
+    return (
+      <Routes>
+        <Route path="/" element={<RiderDashboard />} />
+        <Route path="/my-earnings" element={<RiderEarnings />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    );
   }
 
   if (user && user.role === "admin") {
@@ -55,7 +63,7 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
       <Routes>
         <Route element={<PublicRoute />}>
@@ -75,7 +83,7 @@ const App = () => {
           <Route path="/account" element={<Account />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </>
   );
 };
 

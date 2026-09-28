@@ -256,3 +256,29 @@ export const updateOrderStatusByRider = TryCatch(async (req: AuthenticatedReques
         res.status(500).json({ message: 'Internal server error' })
     }
 })
+
+export const fetchMyDeliveredOrders = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const riderUserId = req.user?._id;
+
+    if (!riderUserId) {
+        return res.status(400).json({ message: 'Please login' });
+    }
+
+    // Rider ki profile se rider._id nikalna
+    const rider = await Rider.findOne({ userId: riderUserId });
+    if (!rider) {
+        return res.status(404).json({ message: 'Rider profile not found' });
+    }
+
+    // Internal call to Restaurant Service
+    const { data } = await axios.get(
+        `${process.env.RESTAURANT_SERVICE}/api/v1/order/delivered/rider?riderId=${rider._id}`,
+        {
+            headers: {
+                'x-internal-key': process.env.INTERNAL_SERVICE_KEY,
+            },
+        }
+    );
+
+    return res.status(200).json(data);
+});
