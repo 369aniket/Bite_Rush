@@ -17,7 +17,7 @@ interface Address {
 }
 
 const Checkout = () => {
-  const { cart, subTotal, quantity } = useAppData();
+  const { cart, subTotal, quantity, fetchCart } = useAppData();
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -44,8 +44,8 @@ const Checkout = () => {
         if (list.length > 0 && !selectedAddressId) {
           setSelectedAddressId(list[0]._id);
         }
-      } catch (error) {
-        console.error(error);
+      } catch (error:any) {
+        console.error(error.response?.data?.message || error.message);
       } finally {
         setLoadingAddress(false);
       }
@@ -121,7 +121,7 @@ const Checkout = () => {
               razorpay_signature: response.razorpay_signature,
               orderId,
             });
-
+            await fetchCart(); // Refresh cart after successful payment
             toast.success("Payment Successful!");
             navigate(`/paymentsuccess/${response.razorpay_payment_id}`);
           } catch {
@@ -135,8 +135,8 @@ const Checkout = () => {
 
       const razorpay = new (window as any).Razorpay(options);
       razorpay.open();
-    } catch (error) {
-      console.error(error);
+    } catch (error:any) {
+      console.error(error?.response?.data?.message || error.message);
       toast.error("Payment failed. Please refresh and try again.");
     } finally {
       setLoadingRazorpay(false);
@@ -165,8 +165,8 @@ const Checkout = () => {
       } catch {
         toast.error("Stripe payment initiation failed");
       }
-    } catch (error) {
-      console.error(error);
+    } catch (error:any) {
+      console.error(error?.response?.data?.message || error.message);
       toast.error("Payment failed");
     } finally {
       setLoadingStripe(false);

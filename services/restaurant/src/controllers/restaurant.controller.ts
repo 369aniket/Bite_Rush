@@ -81,6 +81,8 @@ export const fetchRestaurant = TryCatch(async (req: AuthenticatedRequest, res) =
     }
 
     if (!req.user.restaurantId) {
+        const expiresIn = Number(process.env.TOKEN_EXPIRY ?? 86400);
+
         const token = jwt.sign(
             {
                 user: {
@@ -89,7 +91,7 @@ export const fetchRestaurant = TryCatch(async (req: AuthenticatedRequest, res) =
                 },
             },
             process.env.JWT_SECRET as string,
-            { expiresIn: process.env.TOKEN_EXPIRY as string }
+            { expiresIn }
         );
 
         return res.json({ restaurant, token })

@@ -48,7 +48,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [quantity, setQuantity] = useState(0)
 
   async function fetchCart() {
-    if (!user || user.role !== "customer") return;
+   if (!user || user.role === "seller" || user.role === "rider" || user.role === "admin") return;
     try {
       const { data } = await axios.get(`${restaurantService}/api/v1/cart/all`, {
         headers: {
@@ -68,11 +68,11 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     fetchUser();
   }, []);
 
-  useEffect(() => {
-    if (user && user.role === "customer") {
+ useEffect(() => {
+    if (user && user.role !== "seller" && user.role !== "rider" && user.role !== "admin") {
       fetchCart();
     }
-  }, [user])
+  }, [user]);
 
   useEffect(() => {
     if (!navigator.geolocation)

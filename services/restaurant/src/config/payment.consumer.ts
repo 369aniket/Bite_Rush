@@ -1,5 +1,6 @@
 import axios from 'axios';
 import Order from '../models/Order.model.js';
+import Cart from '../models/Cart.model.js';
 import { getChannel } from './rabbitmq.js'
 
 export const startPaymentConsumer = async() => {
@@ -39,6 +40,14 @@ export const startPaymentConsumer = async() => {
             }
 
             console.log(`✅ Order placed successfully ${order._id}`);
+            
+            // Clear user's cart now that payment is confirmed
+
+            try {
+                await Cart.deleteMany({ userId: order.userId });
+            } catch (cartErr) {
+                console.error("Failed to clear cart after payment:", cartErr);
+            }
 
             // socket work 
 

@@ -118,7 +118,7 @@ export const createOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
         delivaryFee,
         platfromFee,
         totalAmount,
-        addressId: address._id,
+        addressId: address._id.toString(),
         delivaryAddress: {
             formattedAddress: address.formattedAddress,
             mobile: address.mobile,
@@ -129,10 +129,8 @@ export const createOrder = TryCatch(async (req: AuthenticatedRequest, res) => {
         paymentStatus: "pending",
         status: "placed",
         expiresAt,
+    });
 
-    })
-
-    await Cart.deleteMany({ userId: user._id });
 
     res.json({
         success: true,
@@ -149,7 +147,7 @@ export const fetchOrderForPayment = TryCatch(async (req, res) => {
         })
     }
 
-    const order = await Order.findById(req.params.id)
+    const order = await Order.findById(req.params.id) as any;
 
     if (!order) {
         return res.status(404).json({ message: "Order not found" })
@@ -182,7 +180,7 @@ export const fetchRestaurantOrders = TryCatch(async (req: AuthenticatedRequest, 
     }
 
 
-    const { limit } = req.query.limit ? Number(req.query.limit) : 0;
+    const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 0;
 
     const orders = await Order.find({
         restaurantId,
@@ -344,16 +342,19 @@ export const assignOrderToRider = TryCatch(async (req, res) => {
 
     const { orderId, riderId, riderName, riderPhone } = req.body;
 
-    const orderAvailable = await Order.findOne({riderId, status: {$ne: 'delivered'}});
+    const orderAvailable = await Order.findOne({
+        riderId: String(riderId),
+        status: { $ne: 'delivered' }
+    } as any);
 
-    if(orderAvailable){
+    if (orderAvailable) {
         return res.status(400)
-        .json({
-            message: "You already have an Order"
-        })
+            .json({
+                message: "You already have an Order"
+            })
     }
 
-    const order = await Order.findById(orderId);
+    const order = await Order.findById(orderId) as any;
 
     if (order?.riderId !== null) {
         return res.status(400).json({ message: 'Order already taken' })
@@ -399,8 +400,7 @@ export const assignOrderToRider = TryCatch(async (req, res) => {
 
 export const getCurrentOrdersForRider = TryCatch(async (req, res) => {
 
-    const { riderId } = req.query;
-
+    const { riderId } = req.query as { riderId?: string };
 
     if (req.headers['x-internal-key'] !== process.env.INTERNAL_SERVICE_KEY) {
         console.log("❌ Internal key mismatch");
@@ -411,11 +411,12 @@ export const getCurrentOrdersForRider = TryCatch(async (req, res) => {
         return res.status(400).json({ message: 'Rider Id is required' })
     }
 
+    const riderQueryId = String(riderId);
 
     const order = await Order.findOne({
-        riderId,
+        riderId: riderQueryId,
         status: { $ne: 'delivered' }
-    }).populate("restaurantId");
+    } as any).populate("restaurantId");
 
 
     if (!order) {
@@ -473,7 +474,7 @@ export const updateOrderStatusByRider = TryCatch(async (req, res) => {
     }
 
     if (order.status === 'picked_up') {
-         order.status = 'delivered';
+        order.status = 'delivered';
 
 
         await order.save()

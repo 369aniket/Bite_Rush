@@ -6,13 +6,14 @@ import toast from "react-hot-toast";
 import { BiCheckCircle } from "react-icons/bi";
 import { BsArrowRight } from "react-icons/bs";
 import { VscLoading } from "react-icons/vsc";
+import { useAppData } from "../context/AppContext";
 
 const OrderSuccess = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const sessionId = params.get("session_id");
   const [verifying, setVerifying] = useState(true);
-
+  const { fetchCart } = useAppData();
   useEffect(() => {
     const verifyPayment = async () => {
       if (!sessionId) {
@@ -24,7 +25,7 @@ const OrderSuccess = () => {
         await axios.post(`${utilsService}/api/v1/payment/stripe/verify`, {
           sessionId,
         });
-
+        await fetchCart(); // Refresh cart after successful payment
         toast.success("Payment verified successfully!");
       } catch (error) {
         toast.error("Stripe payment verification failed");
