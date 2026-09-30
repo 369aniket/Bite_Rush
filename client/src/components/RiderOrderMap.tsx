@@ -1,17 +1,9 @@
 import type { IOrder } from "../types";
 import { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import "leaflet-routing-machine";
 import { useSocket } from "../context/SocketContext";
-
-declare module "leaflet" {
-  namespace Routing {
-    function control(options: any): any;
-    function osrmv1(options?: any): any;
-  }
-}
 
 interface Props {
   order: IOrder;
@@ -30,29 +22,45 @@ const deliveryIcon = new L.DivIcon({
 });
 
 const Routing = ({ from, to }: { from: [number, number]; to: [number, number] }) => {
-  const map = useMap();
+  const [routePositions, setRoutePositions] = useState<[number, number][]>([from, to]);
 
   useEffect(() => {
-    const control = L.Routing.control({
-      waypoints: [L.latLng(from), L.latLng(to)],
-      lineOptions: {
-        style: [{ color: "#f97316", weight: 5, opacity: 0.85 }],
-      },
-      addWaypoints: false,
-      draggableWaypoints: false,
-      show: false,
-      createMarker: () => null,
-      router: L.Routing.osrmv1({
-        serviceUrl: "https://router.project-osrm.org/route/v1",
-      }),
-    }).addTo(map);
+    let isCancelled = false;
+
+    const fetchRoute = async () => {
+      try {
+        const res = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${from[1]},${from[0]};${to[1]},${to[0]}?overview=full&geometries=geojson`
+        );
+        const data = await res.json();
+
+        if (!isCancelled && data.code === "Ok" && data.routes?.[0]?.geometry?.coordinates) {
+          const coords: [number, number][] = data.routes[0].geometry.coordinates.map(
+            ([lng, lat]: [number, number]) => [lat, lng]
+          );
+          setRoutePositions(coords);
+        }
+      } catch (err) {
+        console.warn("OSRM routing error, fallback to direct line: ", err);
+        if (!isCancelled) {
+          setRoutePositions([from, to]);
+        }
+      }
+    };
+
+    fetchRoute();
 
     return () => {
-      map.removeControl(control);
+      isCancelled = true;
     };
-  }, [from, to, map]);
+  }, [from[0], from[1], to[0], to[1]]);
 
-  return null;
+  return (
+    <Polyline
+      positions={routePositions}
+      pathOptions={{ color: "#f97316", weight: 5, opacity: 0.85 }}
+    />
+  );
 };
 
 const RiderOrderMap = ({ order }: Props) => {
