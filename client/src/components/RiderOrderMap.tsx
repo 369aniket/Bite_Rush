@@ -4,8 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import * as L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet-routing-machine";
-import axios from "axios";
-import { realtimeService } from "../main";
+import { useSocket } from "../context/SocketContext";
 
 declare module "leaflet" {
   namespace Routing {
@@ -57,6 +56,7 @@ const Routing = ({ from, to }: { from: [number, number]; to: [number, number] })
 };
 
 const RiderOrderMap = ({ order }: Props) => {
+  const { socket } = useSocket();
   const [riderLocation, setRiderLocation] = useState<[number, number] | null>(null);
 
   if (
@@ -76,28 +76,18 @@ const RiderOrderMap = ({ order }: Props) => {
       if (!navigator.geolocation) return;
 
       navigator.geolocation.getCurrentPosition(
-        async (pos) => {
+        (pos) => {
           const latitude = pos.coords.latitude;
           const longitude = pos.coords.longitude;
 
           setRiderLocation([latitude, longitude]);
 
-          try {
-            await axios.post(
-              `${realtimeService}/api/v1/internal/emit`,
-              {
-                event: "rider:location",
-                room: `user:${order.userId}`,
-                payload: { latitude, longitude },
-              },
-              {
-                headers: {
-                  "x-internal-key": import.meta.env.VITE_INTERNAL_SERVICE_KEY,
-                },
-              }
-            );
-          } catch (err) {
-            console.error("Failed to emit rider location: ", err);
+          if (socket && socket.connected) {
+            socket.emit("rider:location:update", {
+              targetUserId: order.userId,
+              latitude,
+              longitude,
+            });
           }
         },
         (err) => console.warn("Rider location error: ", err),
@@ -113,7 +103,7 @@ const RiderOrderMap = ({ order }: Props) => {
     const interval = setInterval(fetchLocation, 10000);
 
     return () => clearInterval(interval);
-  }, [order.userId]);
+  }, [order.userId, socket]);
 
   if (!riderLocation) return null;
 
