@@ -38,7 +38,28 @@ export const addMenuItem = TryCatch(async(req:AuthenticatedRequest, res) => {
         return res.status(500).json({message: "Failed to create file Buffer"})
     }
 
-    const { data: uploadResult } = await axios.post(`${process.env.UTILS_SERVICE}/api/v1/upload`,{buffer: fileBuffer.content})
+    let uploadResult;
+    try {
+        const response = await axios.post(
+            `${process.env.UTILS_SERVICE}/api/v1/upload`,
+            { buffer: fileBuffer.content },
+            {
+                timeout: 120000,
+                maxBodyLength: Infinity,
+                maxContentLength: Infinity,
+            }
+        );
+        uploadResult = response.data;
+    } catch (uploadErr: any) {
+        console.error("Failed to upload dish image via utils service:", uploadErr?.response?.data || uploadErr.message);
+        return res.status(500).json({
+            message: uploadErr?.response?.data?.message || uploadErr.message || "Failed to upload dish image",
+        });
+    }
+
+    if (!uploadResult?.url) {
+        return res.status(500).json({ message: "Failed to get image URL from upload service" });
+    }
 
     const item = await MenuItem.create({
         name,
@@ -123,4 +144,4 @@ export const toggleMenuItemAvailability = TryCatch( async( req:AuthenticatedRequ
     item.isAvailable = !item.isAvailable;
     await item.save()
     res.json({message: `Item Marked as ${item.isAvailable ? "available" : "not available"}`, item})
-}) 
+})

@@ -9,6 +9,55 @@ interface Props {
   onComplete: () => void;
 }
 
+// Client-side image compression: 10MB raw photos ko 200KB-300KB clean JPEG me convert karta hai
+const compressImage = async (imageFile: File, maxWidth = 1200, quality = 0.8): Promise<File> => {
+  if (!imageFile.type.startsWith("image/") || imageFile.size <= 300 * 1024) {
+    return imageFile;
+  }
+
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(imageFile);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob && blob.size < imageFile.size) {
+              const compressedFile = new File([blob], imageFile.name.replace(/\.[^/.]+$/, ".jpg"), {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              resolve(imageFile);
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.onerror = () => resolve(imageFile);
+    };
+    reader.onerror = () => resolve(imageFile);
+  });
+};
+
 const AddMenuItem = ({ restaurantId, onComplete }: Props) => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -23,15 +72,17 @@ const AddMenuItem = ({ restaurantId, onComplete }: Props) => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("description", description);
-    formData.append("price", price);
-    formData.append("restaurantId", restaurantId);
-    formData.append("file", file);
-
     setLoading(true);
     try {
+      // Image compress karke upload pipeline me timeout aur aborted stream se bachata hai
+      const readyFile = await compressImage(file);
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("price", price);
+      formData.append("restaurantId", restaurantId);
+      formData.append("file", readyFile);
+
       await axios.post(`${restaurantService}/api/v1/item/new`, formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
